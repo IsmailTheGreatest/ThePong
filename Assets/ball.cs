@@ -1,7 +1,6 @@
 using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BallController : MonoBehaviour
 {
@@ -11,12 +10,21 @@ public class BallController : MonoBehaviour
     public Text opponentText;
     private int hitCounter;
     private Rigidbody2D rb;
-    private bool gameStarted = false; // Added a flag for game start
+    private bool gameStarted = false; // Flag to start the game
+
+    // Audio clips for scoring and collisions
+    public AudioClip hitWallClip;
+    public AudioClip hitPaddleClip;
+    public AudioClip scoreClip;
+
+    private AudioSource audioSource;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         rb.velocity = Vector2.zero; // Keep the ball stationary at start
+
+        audioSource = GetComponent<AudioSource>(); // Get the audio source
     }
 
     void Update()
@@ -42,7 +50,7 @@ public class BallController : MonoBehaviour
 
     private void RestartBall()
     {
-        rb.velocity = new Vector2(0, 0);
+        rb.velocity = Vector2.zero;
         transform.position = new Vector2(0, 0);
         hitCounter = 0;
         Invoke("StartBall", 2f);
@@ -50,13 +58,15 @@ public class BallController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (transform.position.x > 0)
+        if (transform.position.x > 0) // Player scored
         {
+            PlayAudio(scoreClip); // Play score sound
             RestartBall();
             playerText.text = (int.Parse(playerText.text) + 1).ToString();
         }
-        else if (transform.position.x < 0)
+        else if (transform.position.x < 0) // Opponent scored
         {
+            PlayAudio(scoreClip); // Play score sound
             RestartBall();
             opponentText.text = (int.Parse(opponentText.text) + 1).ToString();
         }
@@ -78,6 +88,8 @@ public class BallController : MonoBehaviour
         }
 
         rb.velocity = new Vector2(xDirection, yDirection) * (initialSpeed + (speedIncrease * hitCounter));
+
+        PlayAudio(hitPaddleClip); // Play paddle hit sound
     }
 
     private void OnCollisionEnter2D(Collision2D other)
@@ -85,6 +97,19 @@ public class BallController : MonoBehaviour
         if (other.gameObject.name == "PaddleA" || other.gameObject.name == "PaddleB")
         {
             PlayerBounce(other.transform);
+        }
+        else
+        {
+            PlayAudio(hitWallClip); // Play wall hit sound
+        }
+    }
+
+    // Helper method to play sound clips
+    private void PlayAudio(AudioClip clip)
+    {
+        if (clip != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(clip);
         }
     }
 }
